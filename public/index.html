@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Streaming with Node js</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  </head>
+  <body>
+    <div class="w-full h-screen bg-zinc-900 text-white p-10">
+      <h1 class="text-3xl font-semibold mb-5">
+        Live Streaming Platform with Node js
+      </h1>
+
+      <div class="w-[600px] h-[500px]">
+        <video muted id="userVideo" autoplay class="w-full h-auto"></video>
+
+        <button
+          id="startStream"
+          class="block mt-3 px-3 py-2 bg-blue-600 rounded-lg"
+        >
+          Start
+        </button>
+      </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous"></script>
+    <script>
+        const socket = io()
+      const startButton = document.getElementById("startStream");
+
+      let state = { media: null };
+
+      async function startVideo() {
+        try {
+          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            const stream = await navigator.mediaDevices.getUserMedia({
+              audio: true,
+              video: true,
+            });
+            const userVideo = document.getElementById("userVideo");
+            state.media = stream
+            userVideo.srcObject = stream;
+          } else {
+            console.log("getUserMedia not supported on your browser!");
+          }
+        } catch (error) {
+          console.log("Error accessing the user video");
+        }
+      }
+
+      window.onload = startVideo;
+
+      startButton.addEventListener("click", function () {
+        const mediaRecorder = new MediaRecorder(state.media,{
+            audioBitsPerSecond: 128000,
+            videoBitsPerSecond: 2500000,
+            framerate: 25
+        })
+
+        mediaRecorder.ondataavailable = event => {
+            socket.emit("binaryStream",event.data)
+        };
+
+        mediaRecorder.start(25);
+      });
+    </script>
+  </body>
+</html>
